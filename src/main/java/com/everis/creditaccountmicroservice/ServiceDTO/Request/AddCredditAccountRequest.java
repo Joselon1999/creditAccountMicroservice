@@ -12,10 +12,10 @@ import javax.validation.constraints.NotBlank;
 @NoArgsConstructor
 @AllArgsConstructor
 public class AddCredditAccountRequest {
-    @NotBlank(message = "'serialNumber' can't be blank")
     private String serialNumber;
-    @NotBlank(message = "'type' can't be blank")
-    private String type;
-    @NotBlank(message = "'clientId' can't be blank")
+    private String idCreditAccountType;
     private String clientId;
+    private String dni;
+    private double ammount;
+    private double limit;
 }

@@ -1,6 +1,7 @@
 package com.everis.creditaccountmicroservice.Controller;
 
 import com.everis.creditaccountmicroservice.Document.CreditAccount;
+import com.everis.creditaccountmicroservice.Document.CreditAccountTransaction;
 import com.everis.creditaccountmicroservice.Service.CreditAccountService;
 import com.everis.creditaccountmicroservice.ServiceDTO.Request.AddCredditAccountRequest;
 import io.swagger.annotations.ApiOperation;
@@ -14,7 +15,7 @@ import javax.validation.Valid;
 
 @RestController
 @RequiredArgsConstructor
-@RequestMapping(value = "/api")
+@RequestMapping(value = "/api/creditAccounts")
 public class CreditAccountController {
 
     @Autowired
@@ -23,14 +24,14 @@ public class CreditAccountController {
     @ApiOperation(value = "Creates new accounts",
             notes = "Requires a AddcreditAccountRequest Params - Which are the same as  the creditAccount Params" +
                     "excluding the ID")
-    @PostMapping(value = "/creditAccounts")
+    @PostMapping
     public Mono<CreditAccount> createClientcreditAccount(@Valid @RequestBody AddCredditAccountRequest addcreditAccountRequest){
         return creditAccountService.create(addcreditAccountRequest);
     }
     /*UPDATE*/
     @ApiOperation(value = "Creates new accounts",
             notes = "Requires creditId and AddcreditAccountRequest Params ")
-    @PutMapping(value = "/creditAccounts/{creditId}")
+    @PutMapping(value = "/{creditId}")
     public Mono<CreditAccount> updateClientcreditAccount(@PathVariable("creditId") String creditId,
                                                      @Valid @RequestBody AddCredditAccountRequest addcreditAccountRequest) {
         return creditAccountService.update(creditId,addcreditAccountRequest);
@@ -38,21 +39,29 @@ public class CreditAccountController {
     /*READ*/
     @ApiOperation(value = "Creates new accounts",
             notes = "Requires Client ID")
-    @GetMapping(value = "/creditAccounts/{clientId}")
+    @GetMapping(value = "/{clientId}")
     public Flux<CreditAccount> listClientcreditAccounts(@PathVariable(value = "clientId") String clientId){
         return creditAccountService.readAll(clientId);
     }
     /*DELETE*/
     @ApiOperation(value = "Deletes a credit accounts",
             notes = "Requires creditAccount ID")
-    @DeleteMapping(value = "/creditAccounts/{creditId}")
+    @DeleteMapping(value = "/{creditId}")
     public Mono<CreditAccount> deleteClientcreditAccount(@PathVariable(value = "creditId") String creditId){
         return creditAccountService.delete(creditId);
 
     }
-    /*FIND ONE
-    @GetMapping(value = "/find/{clientId}")
-    public Mono<Client> findOne(@PathVariable(value = "clientId") String clientId){
-        return clientService.getOne(clientId);
-    }*/
+    /*FIND ONE*/
+    @GetMapping(value = "/find/{id}")
+    public Mono<CreditAccount> findOne(@PathVariable(value = "id") String id){
+        return creditAccountService.getOne(id);
+    }
+    /*TRANSFERENCES*/
+    @ApiOperation(value = "REGISTER TRANSFERENCE OF MONEY",
+            notes = "Requires CREDITACCONTRANSFERENCE and will update and create an entity")
+    @PutMapping(value = "/transference/{id}")
+    public Mono<CreditAccount> transferenceBankAccount(@PathVariable(value = "id") String id,
+                                                     @Valid @RequestBody CreditAccountTransaction creditAccountTransaction) {
+        return creditAccountService.tranference(id,creditAccountTransaction);
+    }
 }

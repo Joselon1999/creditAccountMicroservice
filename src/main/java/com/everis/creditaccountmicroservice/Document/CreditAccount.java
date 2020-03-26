@@ -8,6 +8,7 @@ import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
 
 import javax.validation.constraints.NotBlank;
+import javax.validation.constraints.NotNull;
 
 @Document(value = "creditAccount")
 @Getter
@@ -20,7 +21,10 @@ public class CreditAccount {
     @NotBlank(message = "'serialNumber' can't be blank")
     private String serialNumber;
     @NotBlank(message = "'type' can't be blank")
-    private String type;
-    @NotBlank(message = "'clientId' can't be blank")
+    private CreditAccountType creditAccountType;
     private String clientId;
+    @NotBlank(message = "'dni' can't be blank")
+    private String dni;
+    private double limit;
+    private double ammount;
 }
