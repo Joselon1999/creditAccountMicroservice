@@ -4,6 +4,7 @@ import com.everis.creditaccountmicroservice.Document.CreditAccount;
 import com.everis.creditaccountmicroservice.Document.CreditAccountTransaction;
 import com.everis.creditaccountmicroservice.Service.CreditAccountService;
 import com.everis.creditaccountmicroservice.ServiceDTO.Request.AddCredditAccountRequest;
+import com.everis.creditaccountmicroservice.ServiceDTO.Request.CreditPaymentRequest;
 import io.swagger.annotations.ApiOperation;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -63,5 +64,13 @@ public class CreditAccountController {
     public Mono<CreditAccount> transferenceBankAccount(@PathVariable(value = "id") String id,
                                                      @Valid @RequestBody CreditAccountTransaction creditAccountTransaction) {
         return creditAccountService.tranference(id,creditAccountTransaction);
+    }
+
+    /*TRANSFERENCES*/
+    @ApiOperation(value = "REGISTER TRANSFERENCE OF MONEY FROM BANK ACCOUNT",
+            notes = "Requires CREDITACCONTRANSFERENCE and will update and create an entity")
+    @PutMapping(value = "/reciveTranference/")
+    public Mono<CreditAccount> reciveTranference(@Valid @RequestBody CreditPaymentRequest creditPaymentRequest) {
+        return creditAccountService.reciveTranference(creditPaymentRequest);
     }
 }

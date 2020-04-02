@@ -7,6 +7,7 @@ import com.everis.creditaccountmicroservice.Repository.CreditAccountRepository;
 import com.everis.creditaccountmicroservice.Repository.CreditAccountTransactionRepository;
 import com.everis.creditaccountmicroservice.Repository.CreditAccountTypeRepository;
 import com.everis.creditaccountmicroservice.ServiceDTO.Request.AddCredditAccountRequest;
+import com.everis.creditaccountmicroservice.ServiceDTO.Request.CreditPaymentRequest;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -110,23 +111,40 @@ public class CreditAccountServiceImpl implements CreditAccountService {
 
     @Override
     public Mono<CreditAccount> tranference(String id, CreditAccountTransaction creditAccountTransaction) {
-        return creditAccountRepository.findById(id).flatMap(creditAccount -> {
-            double total = creditAccount.getAmmount();
-            if ((total + creditAccountTransaction.getTransferenceAmount() >= 0) &&
-                    (total + creditAccountTransaction.getTransferenceAmount() <= creditAccount.getLimit())) {
-                creditAccount.setAmmount(total + creditAccountTransaction.getTransferenceAmount());
-            } else {
-                return Mono.error(new Exception("Monto a retirar supera a monto permitido"));
-            }
-            CreditAccountTransaction newTransaction = new CreditAccountTransaction();
-            newTransaction.setIdCliente(creditAccountTransaction.getIdCliente());
-            newTransaction.setSerialNumber(creditAccountTransaction.getSerialNumber());
-            newTransaction.setTransferenceType("TRANSFERENCE");
-            newTransaction.setTransferenceAmount(creditAccountTransaction.getTransferenceAmount());
-            newTransaction.setTotalAmount(creditAccount.getAmmount());
-            creditAccountTransactionRepository.save(newTransaction).subscribe();
-            return creditAccountRepository.save(creditAccount);
-        });
-
+        return creditAccountRepository.findById(id)
+                .filter(bankAccount ->bankAccount.getAmmount()+creditAccountTransaction.getTransferenceAmount()>=0)
+                .switchIfEmpty(Mono.error(new Exception("Monto a retirar supera a monto actual")))
+                .flatMap(bankAccount -> {
+                    bankAccount.setAmmount(bankAccount.getAmmount()+creditAccountTransaction.getTransferenceAmount());
+                    CreditAccountTransaction newTransaction = new CreditAccountTransaction();
+                    newTransaction.setIdCliente(creditAccountTransaction.getIdCliente());
+                    newTransaction.setSerialNumber(creditAccountTransaction.getSerialNumber());
+                    newTransaction.setTransferenceType("TRANSFERENCE");
+                    newTransaction.setTransferenceAmount(creditAccountTransaction.getTransferenceAmount());
+                    newTransaction.setTotalAmount(bankAccount.getAmmount());
+                    creditAccountTransactionRepository.save(newTransaction).subscribe();
+                    System.out.println("MONTO INGRESADO:    "+newTransaction.getTransferenceAmount());
+                    System.out.println("MONTO TOTAL ACTUAL: "+newTransaction.getTotalAmount());
+                    return creditAccountRepository.save(bankAccount);
+                });
+    }
+    @Override
+    public Mono<CreditAccount> reciveTranference(CreditPaymentRequest creditPaymentRequest) {
+        return creditAccountRepository.findById(creditPaymentRequest.getIdCreditAccount())
+                .filter(bankAccount ->bankAccount.getAmmount()-creditPaymentRequest.getAmmount()>=0)
+                .switchIfEmpty(Mono.error(new Exception("Monto a retirar supera a monto actual")))
+                .flatMap(bankAccount -> {
+                    bankAccount.setAmmount(bankAccount.getAmmount()-creditPaymentRequest.getAmmount());
+                    CreditAccountTransaction newTransaction = new CreditAccountTransaction();
+                    newTransaction.setIdCliente(bankAccount.getClientId());
+                    newTransaction.setSerialNumber(bankAccount.getSerialNumber());
+                    newTransaction.setTransferenceType("TRANSFERENCE FROM BANK ACCOUNT");
+                    newTransaction.setTransferenceAmount(creditPaymentRequest.getAmmount());
+                    newTransaction.setTotalAmount(bankAccount.getAmmount());
+                    creditAccountTransactionRepository.save(newTransaction).subscribe();
+                    System.out.println("MONTO INGRESADO:    "+newTransaction.getTransferenceAmount());
+                    System.out.println("MONTO TOTAL ACTUAL: "+newTransaction.getTotalAmount());
+                    return creditAccountRepository.save(bankAccount);
+                });
     }
 }

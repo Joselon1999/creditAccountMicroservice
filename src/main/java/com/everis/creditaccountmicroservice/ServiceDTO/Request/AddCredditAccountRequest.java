@@ -18,4 +18,5 @@ public class AddCredditAccountRequest {
     private String dni;
     private double ammount;
     private double limit;
+    private double monto;
 }

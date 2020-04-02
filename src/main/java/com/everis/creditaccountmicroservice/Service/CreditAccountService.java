@@ -3,6 +3,7 @@ package com.everis.creditaccountmicroservice.Service;
 import com.everis.creditaccountmicroservice.Document.CreditAccount;
 import com.everis.creditaccountmicroservice.Document.CreditAccountTransaction;
 import com.everis.creditaccountmicroservice.ServiceDTO.Request.AddCredditAccountRequest;
+import com.everis.creditaccountmicroservice.ServiceDTO.Request.CreditPaymentRequest;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
@@ -14,4 +15,6 @@ public interface CreditAccountService {
     Mono<CreditAccount> getOne(String id);
     Mono<CreditAccount> isPresent(String clientId);
     Mono<CreditAccount> tranference(String id, CreditAccountTransaction creditAccountTransaction);
+
+    Mono<CreditAccount> reciveTranference(CreditPaymentRequest creditPaymentRequest);
 }
