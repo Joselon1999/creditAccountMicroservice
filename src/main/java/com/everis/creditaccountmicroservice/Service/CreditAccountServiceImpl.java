@@ -55,7 +55,7 @@ public class CreditAccountServiceImpl implements CreditAccountService {
         creditAccount.setSerialNumber(addCredditAccountRequest.getSerialNumber());
         creditAccount.setDni(addCredditAccountRequest.getDni());
         creditAccount.setLimit(addCredditAccountRequest.getLimit());
-        creditAccount.setAmmount(0);
+        creditAccount.setAmmount(addCredditAccountRequest.getAmmount());
         creditAccount.setCreditAccountType(CreditAccountType.builder()
                 .id(bankAccountTypeMono.map(creditAccountType -> {
                     return creditAccountType.getId();

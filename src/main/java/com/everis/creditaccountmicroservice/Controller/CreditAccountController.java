@@ -69,7 +69,7 @@ public class CreditAccountController {
     /*TRANSFERENCES*/
     @ApiOperation(value = "REGISTER TRANSFERENCE OF MONEY FROM BANK ACCOUNT",
             notes = "Requires CREDITACCONTRANSFERENCE and will update and create an entity")
-    @PutMapping(value = "/reciveTranference/")
+    @PutMapping(value = "/reciveTranference")
     public Mono<CreditAccount> reciveTranference(@Valid @RequestBody CreditPaymentRequest creditPaymentRequest) {
         return creditAccountService.reciveTranference(creditPaymentRequest);
     }
