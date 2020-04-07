@@ -9,6 +9,7 @@ import org.springframework.data.mongodb.core.mapping.Document;
 
 import javax.validation.constraints.NotBlank;
 import javax.validation.constraints.NotNull;
+import java.util.Date;
 
 @Document(value = "creditAccount")
 @Getter
@@ -22,10 +23,14 @@ public class CreditAccount {
     private String serialNumber;
     @NotBlank(message = "'type' can't be blank")
     private CreditAccountType creditAccountType;
+    @NotBlank(message = "'bankId' can't be blank")
+    private String bankId;
     private String clientId;
     @NotBlank(message = "'dni' can't be blank")
     private String dni;
     private double limit;
     private double ammount;
-
+    @NotBlank(message = "'expireDate' can't be blank")
+    private Date expireDate;
+    private Date creationDate;
 }

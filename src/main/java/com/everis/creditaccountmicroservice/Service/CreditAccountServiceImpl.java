@@ -16,9 +16,9 @@ import org.springframework.web.client.RestTemplate;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Objects;
+import java.util.*;
+import java.util.stream.Collector;
+import java.util.stream.Collectors;
 
 @Service
 public class CreditAccountServiceImpl implements CreditAccountService {
@@ -42,6 +42,7 @@ public class CreditAccountServiceImpl implements CreditAccountService {
         return isPresent;
     }
 
+
     @Override
     public Mono<CreditAccount> create(AddCredditAccountRequest addCredditAccountRequest) {
 
@@ -56,6 +57,8 @@ public class CreditAccountServiceImpl implements CreditAccountService {
         creditAccount.setDni(addCredditAccountRequest.getDni());
         creditAccount.setLimit(addCredditAccountRequest.getLimit());
         creditAccount.setAmmount(addCredditAccountRequest.getAmmount());
+        creditAccount.setExpireDate(addCredditAccountRequest.getExpireDate());
+        creditAccount.setCreationDate(new Date());
         creditAccount.setCreditAccountType(CreditAccountType.builder()
                 .id(bankAccountTypeMono.map(creditAccountType -> {
                     return creditAccountType.getId();
@@ -64,6 +67,14 @@ public class CreditAccountServiceImpl implements CreditAccountService {
                     return creditAccountType.getName();
                 }).block())
                 .build());
+
+        //TODO pasar esto a funcional y .filter
+        if (creditAccount.getExpireDate().compareTo(new Date()) < 0) {
+            return Mono.error(new Exception("FECHA IMPOSIBLE DE SELECCIONAR"));
+        }
+        if (validateDebt(creditAccount.getClientId()).block()){
+            return Mono.error(new Exception("CLIENTE TIENE DEUDA PENDIENTE"));
+        }
         if (exist(creditAccount.getClientId())) {
             return creditAccountRepository.save(creditAccount);
         } else {
@@ -79,6 +90,10 @@ public class CreditAccountServiceImpl implements CreditAccountService {
             client.setDni(addCredditAccountRequest.getDni());
             client.setLimit(addCredditAccountRequest.getLimit());
             client.setClientId(addCredditAccountRequest.getClientId());
+            client.setExpireDate(addCredditAccountRequest.getExpireDate());
+            if (client.getExpireDate().compareTo(new Date()) < 0) {
+                return Mono.error(new Exception("FECHA IMPOSIBLE DE SELECCIONAR"));
+            }
             return creditAccountRepository.save(client);
         });
 
@@ -111,40 +126,71 @@ public class CreditAccountServiceImpl implements CreditAccountService {
 
     @Override
     public Mono<CreditAccount> tranference(String id, CreditAccountTransaction creditAccountTransaction) {
+        try {
         return creditAccountRepository.findById(id)
-                .filter(bankAccount ->bankAccount.getAmmount()+creditAccountTransaction.getTransferenceAmount()>=0)
+                .filter(bankAccount -> bankAccount.getAmmount() + creditAccountTransaction.getTransferenceAmount() >= 0)
                 .switchIfEmpty(Mono.error(new Exception("Monto a retirar supera a monto actual")))
                 .flatMap(bankAccount -> {
-                    bankAccount.setAmmount(bankAccount.getAmmount()+creditAccountTransaction.getTransferenceAmount());
+                    bankAccount.setAmmount(bankAccount.getAmmount() + creditAccountTransaction.getTransferenceAmount());
                     CreditAccountTransaction newTransaction = new CreditAccountTransaction();
-                    newTransaction.setIdCliente(creditAccountTransaction.getIdCliente());
-                    newTransaction.setSerialNumber(creditAccountTransaction.getSerialNumber());
+                    newTransaction.setIdCliente(bankAccount.getClientId());
+                    newTransaction.setSerialNumber(bankAccount.getSerialNumber());
                     newTransaction.setTransferenceType("TRANSFERENCE");
                     newTransaction.setTransferenceAmount(creditAccountTransaction.getTransferenceAmount());
                     newTransaction.setTotalAmount(bankAccount.getAmmount());
                     creditAccountTransactionRepository.save(newTransaction).subscribe();
-                    System.out.println("MONTO INGRESADO:    "+newTransaction.getTransferenceAmount());
-                    System.out.println("MONTO TOTAL ACTUAL: "+newTransaction.getTotalAmount());
+                    System.out.println("MONTO INGRESADO:    " + newTransaction.getTransferenceAmount());
+                    System.out.println("MONTO TOTAL ACTUAL: " + newTransaction.getTotalAmount());
                     return creditAccountRepository.save(bankAccount);
                 });
+    }catch (Exception e){
+        return Mono.error(e);
     }
+    }
+
     @Override
     public Mono<CreditAccount> reciveTranference(CreditPaymentRequest creditPaymentRequest) {
-        return creditAccountRepository.findById(creditPaymentRequest.getIdCreditAccount())
-                .filter(bankAccount ->bankAccount.getAmmount()-creditPaymentRequest.getAmmount()>=0)
-                .switchIfEmpty(Mono.error(new Exception("Monto a retirar supera a monto actual")))
-                .flatMap(bankAccount -> {
-                    bankAccount.setAmmount(bankAccount.getAmmount()-creditPaymentRequest.getAmmount());
-                    CreditAccountTransaction newTransaction = new CreditAccountTransaction();
-                    newTransaction.setIdCliente(bankAccount.getClientId());
-                    newTransaction.setSerialNumber(bankAccount.getSerialNumber());
-                    newTransaction.setTransferenceType("TRANSFERENCE FROM BANK ACCOUNT");
-                    newTransaction.setTransferenceAmount(creditPaymentRequest.getAmmount());
-                    newTransaction.setTotalAmount(bankAccount.getAmmount());
-                    creditAccountTransactionRepository.save(newTransaction).subscribe();
-                    System.out.println("MONTO INGRESADO:    "+newTransaction.getTransferenceAmount());
-                    System.out.println("MONTO TOTAL ACTUAL: "+newTransaction.getTotalAmount());
-                    return creditAccountRepository.save(bankAccount);
+        try {
+            return creditAccountRepository.findById(creditPaymentRequest.getIdCreditAccount())
+                    .filter(bankAccount -> bankAccount.getAmmount() - creditPaymentRequest.getAmmount() >= 0)
+                    .switchIfEmpty(Mono.error(new Exception("Monto a retirar supera a monto actual")))
+                    .flatMap(bankAccount -> {
+                        bankAccount.setAmmount(bankAccount.getAmmount() - creditPaymentRequest.getAmmount());
+                        CreditAccountTransaction newTransaction = new CreditAccountTransaction();
+                        newTransaction.setIdCliente(bankAccount.getClientId());
+                        newTransaction.setSerialNumber(bankAccount.getSerialNumber());
+                        newTransaction.setTransferenceType("TRANSFERENCE FROM BANK ACCOUNT");
+                        newTransaction.setTransferenceAmount(creditPaymentRequest.getAmmount());
+                        newTransaction.setTotalAmount(bankAccount.getAmmount());
+                        creditAccountTransactionRepository.save(newTransaction).subscribe();
+                        System.out.println("MONTO INGRESADO:    " + newTransaction.getTransferenceAmount());
+                        System.out.println("MONTO TOTAL ACTUAL: " + newTransaction.getTotalAmount());
+                        return creditAccountRepository.save(bankAccount);
+                    });
+        }catch (Exception e){
+            return Mono.error(e);
+        }
+    }
+
+    @Override
+    public Mono<Boolean> validateDebt(String clientId) {
+
+        return creditAccountRepository.findAllByClientId(clientId)
+                .filter(creditAccount -> creditAccount.getAmmount()>0)
+                .filter(creditAccount -> creditAccount.getExpireDate().compareTo(new Date())<0)
+                .count()
+                .map(aLong -> {
+                    System.out.println(aLong);
+                    return aLong > 0;
                 });
     }
+
+    @Override
+    public Flux<CreditAccount> readAllByBankInTime(String bankId, int days) {
+        long DAY_IN_MS = 1000 * 60 * 60 * 24;
+        Date begin = new Date(System.currentTimeMillis() - (days * DAY_IN_MS));
+        System.out.println("DIAS: "+days);
+        return creditAccountRepository.findByBankIdAndCreationDateBetween(bankId,begin,new Date());
+    }
+
 }

@@ -17,4 +17,6 @@ public interface CreditAccountService {
     Mono<CreditAccount> tranference(String id, CreditAccountTransaction creditAccountTransaction);
 
     Mono<CreditAccount> reciveTranference(CreditPaymentRequest creditPaymentRequest);
+    Mono<Boolean> validateDebt(String clientId);
+    Flux<CreditAccount> readAllByBankInTime(String bankId, int days);
 }

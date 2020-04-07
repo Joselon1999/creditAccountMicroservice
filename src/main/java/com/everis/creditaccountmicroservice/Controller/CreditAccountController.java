@@ -73,4 +73,15 @@ public class CreditAccountController {
     public Mono<CreditAccount> reciveTranference(@Valid @RequestBody CreditPaymentRequest creditPaymentRequest) {
         return creditAccountService.reciveTranference(creditPaymentRequest);
     }
+    /*GET DEBT*/
+    @GetMapping(value = "/findDebt/{id}")
+    public Mono<Boolean> findDebt(@PathVariable(value = "id") String id){
+        return creditAccountService.validateDebt(id);
+    }
+    /*FIND BY BANK*/
+    @GetMapping(value = "/bank/{bankId}/days/{days}")
+    public Flux<CreditAccount> findByBank(@PathVariable(value = "bankId") String bankId,
+                                          @PathVariable(value = "days") int days) {
+        return creditAccountService.readAllByBankInTime(bankId, days);
+    }
 }
