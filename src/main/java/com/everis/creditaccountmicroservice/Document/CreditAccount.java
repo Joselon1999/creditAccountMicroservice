@@ -25,9 +25,11 @@ public class CreditAccount {
     private CreditAccountType creditAccountType;
     @NotBlank(message = "'bankId' can't be blank")
     private String bankId;
+    @NotBlank(message = "'clientId' can't be blank")
     private String clientId;
     @NotBlank(message = "'dni' can't be blank")
     private String dni;
+    @NotBlank(message = "'limit' can't be blank")
     private double limit;
     private double ammount;
     @NotBlank(message = "'expireDate' can't be blank")
